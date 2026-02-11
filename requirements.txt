@@ -1,0 +1,10 @@
+streamlit
+pandas
+numpy
+Pillow
+sentence-transformers
+google-generativeai
+requests
+scikit-learn
+matplotlib
+seaborn
