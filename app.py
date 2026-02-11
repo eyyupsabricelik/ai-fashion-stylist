@@ -7,6 +7,7 @@ from sentence_transformers import SentenceTransformer, util
 import os
 import google.generativeai as genai
 import random
+import requests
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(page_title="Trendyol AI Stylist", page_icon="👗", layout="wide")
@@ -105,7 +106,9 @@ if uploaded_file:
             
             with cols[i]:
                 # use_column_width yerine use_container_width kullanıldı (Sarı uyarıyı çözer)
-                st.image(row['local_path'], use_container_width=True)
+                img_source = row.get('image_url') if 'image_url' in row else row['local_path']
+                st.image(img_source, use_container_width=True)
+                                        
                 st.caption(f"{row['brand']}")
                 st.markdown(f"**{price_display}**")
                 # İsim uzunsa kısalt
@@ -133,9 +136,19 @@ if uploaded_file:
                             candidates.append(samples)
                             for _, row in samples.iterrows():
                                 try:
-                                    img = Image.open(row['local_path'])
+                                    # Önce internetteki URL'yi dene (Cloud için şart)
+                                    if 'image_url' in row and row['image_url']:
+                                        response = requests.get(row['image_url'], stream=True, timeout=5)
+                                        img = Image.open(response.raw)
+                                    else:
+                                        # URL yoksa yerel dosyayı dene (Yedek)
+                                        img = Image.open(row['local_path'])
+                                    
                                     candidate_images.append(img)
-                                except: pass
+                                except Exception as e:
+                                    # Hata olursa pas geç ama konsola yaz (Debug için)
+                                    print(f"Resim yüklenemedi: {e}")
+                                    pass
                     
                     if not candidate_images:
                         st.error("Kombin için uygun aday ürün bulunamadı.")
